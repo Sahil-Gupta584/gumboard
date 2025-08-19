@@ -79,6 +79,11 @@ model Organization {
   boards    Board[]
   selfServeInvites OrganizationSelfServeInvite[]
 
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String?
+  planName             String?
+  subscriptionStatus   String?
+
   @@map("organizations")
 }
 
