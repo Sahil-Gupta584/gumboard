@@ -104,7 +104,7 @@ To enable paid plans and billing, set up Stripe:
 
 ### 2. Add Environment Variables
 
-In your  or `.env` file, add:
+In your `.env` file, add:
 
 ```env
 STRIPE_SECRET_KEY=your_stripe_secret_key
