@@ -8,14 +8,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { checkoutAction } from "@/lib/payments/actions";
-import { createStripeCheckoutSession } from "@/lib/payments/stripe";
+import { pl } from "date-fns/locale";
 import { Check, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const plans = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "per month",
+    description: "For individuals or small teams getting started",
+    features: [
+      "Up to 2 members",
+      "Unlimited boards",
+      "Unlimited notes",
+      "Basic collaboration",
+      "7-day history",
+    ],
+    buttonText: "Get Started",
+    buttonVariant: "outline" as const,
+    highlighted: false,
+    redirect: "/dashboard",
+  },
   {
     name: "Team",
     price: "$9",
@@ -59,15 +75,21 @@ export default function PricingPage() {
           return;
         }
 
-        const checkoutUrl = await createStripeCheckoutSession(userData.organization.id);
-        if(!checkoutUrl) return toast.error("Failed to Initiate stripe session");
-        router.push(checkoutUrl);
+        const res = await fetch("/api/billing/checkout", {
+          method: "POST",
+          body: JSON.stringify({
+            organizationId: userData.organization.id,
+          }),
+        });
+        const data = await res.json();
+        if (!data.url) return toast.error("Failed to Initiate stripe session");
+        router.push(data.url);
       }
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
       console.error("Error adding board:", error);
-      toast.error("Failed to Initiate stripe sesion");
+      toast.error("Failed to Initiate stripe session");
     }
   }
   return (
@@ -80,11 +102,11 @@ export default function PricingPage() {
           Choose the plan that's right for your team
         </p>
       </div>
-      <div className="mt-16 grid gap-8 lg:grid-cols-3">
+      <div className="mt-16 grid gap-8 justify-center lg:grid-cols-2">
         {plans.map((plan) => (
           <Card
             key={plan.name}
-            className={`flex flex-col ${plan.highlighted ? "border-blue-500 dark:border-blue-400 border-2" : ""}`}
+            className={`flex flex-col ${plan.highlighted && "border-blue-500 dark:border-blue-400 border-2 "} bg-white dark:bg-zinc-900 dark:text-white`}
           >
             <CardHeader>
               <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
@@ -108,7 +130,13 @@ export default function PricingPage() {
               <Button
                 className="w-full"
                 variant={plan.buttonVariant}
-                onClick={triggerStripeCheckout}
+                onClick={() => {
+                  if (plan.redirect) {
+                    router.push(plan.redirect);
+                  } else {
+                    triggerStripeCheckout();
+                  }
+                }}
                 disabled={isLoading}
                 aria-busy={isLoading}
               >

@@ -1,10 +1,10 @@
 import Stripe from "stripe";
-import { stripe } from "@/lib/payments/stripe";
 import { NextRequest, NextResponse } from "next/server";
-import { handleSubscriptionChange } from "@/lib/payments/actions";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { stripe } from "../checkout/route";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const webhookSecret = env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
   const payload = await request.text();
@@ -19,45 +19,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Webhook signature verification failed." }, { status: 400 });
   }
 
-  const subscription = event.data.object as Stripe.Subscription;
   switch (event.type) {
+    // This user just subscribed / purchased.
     case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const orgId = session.client_reference_id; // 👈 comes from your checkout creation
-      const customerId = session.customer as string;
-      const subscriptionId = session.subscription as string;
+      const session = event.data.object;
+      const orgId = session.client_reference_id || undefined;
+      const customerId =
+        typeof session.customer === "string" ? session.customer : session.customer?.id;
+      const subscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
 
       await db.organization.update({
         where: { id: orgId },
         data: {
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
-          planName: "team", // set based on which price was bought
-          status: "active",
+          subscriptionStatus: "checkout",
         },
       });
       break;
     }
+    // A payment charged successfully.
+    case "invoice.payment_succeeded": {
+      console.log("a payment succeeded");
 
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-
-      // Look up org by stripeCustomerId
-      const org = await db.organization.findUnique({
-        where: { stripeCustomerId: customerId },
-      });
-      if (!org) {
-        console.error("Org not found for customer:", customerId);
-        return NextResponse.json({ error: "Org not found" }, { status: 404 });
-      }
-
+      const invoice = event.data.object;
+      const stripeCustomerId =
+        typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
       await db.organization.update({
-        where: { id: org.id },
+        where: { stripeCustomerId: stripeCustomerId },
         data: {
-          stripeSubscriptionId: subscription.id,
-          status: subscription.status,
+          subscriptionStatus: "active",
+        },
+      });
+      break;
+    }
+    
+    // A payment failed charged
+    case "invoice.payment_failed": {
+      console.log("a payment failed");
+
+      const invoice = event.data.object;
+      const stripeCustomerId =
+        typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      await db.organization.update({
+        where: { stripeCustomerId: stripeCustomerId },
+        data: {
+          subscriptionStatus: "failed",
         },
       });
       break;
