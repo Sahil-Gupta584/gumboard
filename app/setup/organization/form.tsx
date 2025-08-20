@@ -20,7 +20,7 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
   const [orgName, setOrgName] = useState("");
   const [teamEmails, setTeamEmails] = useState<string[]>([""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [atInviteLimit, setAtInviteLimit] = useState(false)
+  const [atInviteLimit, setAtInviteLimit] = useState(false);
 
   const router = useRouter();
   const { refreshUser } = useUser();
@@ -30,9 +30,6 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
 
   // Valid emails (for banner + submit).
   const validEmails = teamEmails.filter((email) => email.trim() && email.includes("@"));
-
-  // Cap the number of input fields (slots) themselves.
-  const atFieldLimit = teamEmails.length >= INVITES_LIMIT;
 
   const addEmailField = () => {
     if (teamEmails.length >= INVITES_LIMIT) {
@@ -71,8 +68,6 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
       setIsSubmitting(false);
     }
   };
-
-
 
   const hasAnyValidEmail = validEmails.length > 0;
 
@@ -119,34 +114,34 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
           ))}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addEmailField}
-          className="w-full"
-          data-testid="invite-add-btn"
-          disabled={atFieldLimit} // cap number of inputs to the limit
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Team Member
-        </Button>
+        {atInviteLimit ? (
+          <div
+            className="flex items-center justify-between rounded-lg border p-3"
+            data-testid="upgrade-banner"
+          >
+            <span className="text-sm">Free plan: {FREE_INVITES_LIMIT} team member limit</span>
+            <Button size="sm" onClick={() => router.push("/pricing")} data-testid="upgrade-cta">
+              Upgrade
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addEmailField}
+            className="w-full"
+            data-testid="invite-add-btn"
+            disabled={atInviteLimit} // cap number of inputs to the limit
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Team Member
+          </Button>
+        )}
 
         <p className="text-xs text-muted-foreground">
           {"we'll send invitations to join your organization to these email addresses."}
         </p>
       </div>
-
-      {atInviteLimit && (
-        <div
-          className="flex items-center justify-between rounded-lg border p-3"
-          data-testid="upgrade-banner"
-        >
-          <span className="text-sm">Free plan: {FREE_INVITES_LIMIT} team member limit</span>
-          <Button size="sm" onClick={()=>router.push('/pricing')} data-testid="upgrade-cta">
-            Upgrade
-          </Button>
-        </div>
-      )}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Creating..." : hasAnyValidEmail ? "Save & Send Invites" : "Save"}
