@@ -3,7 +3,7 @@ import { db as prisma } from "@/lib/db";
 import { getBaseUrl } from "@/lib/utils";
 import { headers } from "next/headers";
 import { env } from "@/lib/env";
-import { getStripe } from "@/lib/paymets/stripe";
+import { getStripe } from "@/lib/payments/stripe";
 
 const stripe = getStripe();
 export async function POST(req: NextRequest) {

@@ -7,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { X, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/contexts/UserContext";
-import { invitesAllowedForPlan, FREE_INVITES_LIMIT } from "@/lib/paymets/billing";
+import { invitesAllowedForPlan, FREE_INVITES_LIMIT } from "@/lib/payments/billing";
 
 interface OrganizationSetupFormProps {
   onSubmit: (
     orgName: string,
     teamEmails: string[]
-  ) => Promise<{ success: boolean; organization?: { id: string } }>;
+  ) => Promise<{ success: boolean; organization?: unknown }>;
 }
 
 export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFormProps) {
@@ -29,7 +29,6 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
   const INVITES_LIMIT = invitesAllowedForPlan("FREE");
 
   // Valid emails (for banner + submit).
-  const validEmails = teamEmails.filter((email) => email.trim() && email.includes("@"));
 
   const addEmailField = () => {
     if (teamEmails.length >= INVITES_LIMIT) {
@@ -40,7 +39,13 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
   };
 
   const removeEmailField = (index: number) => {
-    setTeamEmails((prev) => prev.filter((_, i) => i !== index));
+    if (teamEmails.length > 1) {
+      setTeamEmails(teamEmails.filter((_, i) => i !== index));
+    }
+
+    if (teamEmails.length <= INVITES_LIMIT) {
+      setAtInviteLimit(false);
+    }
   };
 
   const updateEmail = (index: number, value: string) => {
@@ -49,6 +54,10 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
       next[index] = value;
       return next;
     });
+  };
+
+  const hasValidEmails = () => {
+    return teamEmails.filter((email) => email.trim() && email.includes("@")).length > 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,8 +77,6 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
       setIsSubmitting(false);
     }
   };
-
-  const hasAnyValidEmail = validEmails.length > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 dark:text-zinc-400">
@@ -144,7 +151,7 @@ export default function OrganizationSetupForm({ onSubmit }: OrganizationSetupFor
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Creating..." : hasAnyValidEmail ? "Save & Send Invites" : "Save"}
+        {isSubmitting ? "Creating..." : hasValidEmails() ? "Save & Send Invites" : "Save"}
       </Button>
     </form>
   );

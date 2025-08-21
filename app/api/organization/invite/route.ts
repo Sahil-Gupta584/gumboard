@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getBaseUrl } from "@/lib/utils";
-import { FREE_INVITES_LIMIT } from "@/lib/paymets/billing";
+import { FREE_INVITES_LIMIT } from "@/lib/payments/billing";
 
 const resend = new Resend(env.AUTH_RESEND_KEY);
 
@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
     const organizationInvites = await db.organizationInvite.count({
       where: { organizationId: user.organizationId },
     });
-    console.log("user.organization.planName ", user.organization.planName);
-    console.log("organizationInvites + 1 ", organizationInvites);
+    
+    // Check if the organization has reached its invite limit
     if (user.organization.planName === "Free" && organizationInvites + 1 > FREE_INVITES_LIMIT) {
       return NextResponse.json(
         { error: "Please upgrade plan to add more members" },

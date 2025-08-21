@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
-import { getStripe } from "@/lib/paymets/stripe";
+import { getStripe } from "@/lib/payments/stripe";
 
 const webhookSecret = env.STRIPE_WEBHOOK_SECRET!;
 const stripe = getStripe();
@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           subscriptionStatus: "checkout",
+          planName: "Team",
         },
       });
       break;
     }
     // A payment charged successfully.
     case "invoice.payment_succeeded": {
-      console.log("a payment succeeded");
 
       const invoice = event.data.object;
       const stripeCustomerId =
@@ -58,9 +58,8 @@ export async function POST(request: NextRequest) {
       break;
     }
 
-    // A payment failed charged
+    // A payment failed to charge
     case "invoice.payment_failed": {
-      console.log("a payment failed");
 
       const invoice = event.data.object;
       const stripeCustomerId =

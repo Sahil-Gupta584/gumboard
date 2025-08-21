@@ -23,6 +23,7 @@ export default function OrganizationBillingPage() {
 
   const currentPlan = user.organization.planName;
   const subscriptionStatus = user.organization.subscriptionStatus || "Active";
+console.log("Current Plan:", currentPlan);
 
   // Badge utility
   const badgeClasses = (type: "plan" | "status") => {
@@ -45,36 +46,32 @@ export default function OrganizationBillingPage() {
         Organization Billing
       </h1>
 
-      <Card className="bg-white dark:bg-zinc-900 dark:text-white">
+      <Card className="bg-white dark:bg-zinc-900 dark:text-white max-w-md mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Your Subscription</CardTitle>
+          <CardTitle className="text-2xl font-bold text-left">Your Subscription</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
+        <CardContent className="space-y-6">
+          <div className="flex flex-col items-start gap-2">
             <span className="text-gray-700 dark:text-gray-300 font-medium">Current Plan:</span>
             <span
-              className={`px-3 py-1 text-sm font-semibold rounded-full uppercase ${badgeClasses(
-                "plan"
-              )}`}
+              className={`px-3 py-1 text-sm font-semibold rounded-full uppercase ${badgeClasses("plan")}`}
             >
               {currentPlan}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start gap-2">
             <span className="text-gray-700 dark:text-gray-300 font-medium">Status:</span>
             <span
-              className={`px-3 py-1 text-sm font-semibold rounded-full uppercase ${badgeClasses(
-                "status"
-              )}`}
+              className={`px-3 py-1 text-sm font-semibold rounded-full uppercase ${badgeClasses("status")}`}
             >
               {subscriptionStatus}
             </span>
           </div>
 
-          {currentPlan === "FREE" && (
-            <div className="pt-4">
-              <Link href="/pricing">
+          {currentPlan?.toLowerCase() === "free" && (
+            <div className="pt-6 w-full">
+              <Link href="/pricing" className="block w-full">
                 <Button className="w-full">Upgrade Plan</Button>
               </Link>
             </div>
